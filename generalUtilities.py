@@ -6,7 +6,32 @@ TITLE_MARKER_LEFT = "["
 TITLE_MARKER_RIGHT = "]"
 CHECKBOX_INDICATOR = "X"
 
-# Methods
+# Configuration Functions
+# Allows the left Title Marker to be set to a custom character
+def setTitleMarkerLeft(marker):
+    # Scope the global
+    global TITLE_MARKER_LEFT
+
+    # Change the marker
+    TITLE_MARKER_LEFT = marker
+
+# Allows the right Title Marker to be set to a custom character
+def setTitleMarkerRight(marker):
+    # Scope the global
+    global TITLE_MARKER_RIGHT
+
+    # Change the marker
+    TITLE_MARKER_RIGHT = marker
+
+# Allows the Checkbox 'checked' Indicator to be set to a custom character
+def setCheckboxIndicator(indicator):
+    # Scope the global
+    global CHECKBOX_INDICATOR
+
+    # Change the checkbox indicator
+    CHECKBOX_INDICATOR = indicator
+
+# Functions
 # Ask the user to input a valid answer and returns the choice once answered.
 # query -> String to ask the user. Has ": " appened to its end
 # validAnswers -> List of answer strings that are valid
