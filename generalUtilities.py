@@ -83,11 +83,13 @@ def askUserYesNo(query, boolean = False):
         return askUser(query, ["Yes","No"])
 
 # Prints and retains a menu system based on provided information leaving the calling program to decide function.
-# title -> The title of the menu
+# title -> The title of the menu. Can also be supplied 'None' to have no title printed
 # choices -> List of choice titles for the menu
 def presentTextMenu(title, choices):
-    # Print title
-    print(TITLE_MARKER_LEFT+" "+title+" "+TITLE_MARKER_RIGHT)
+    # Check if title should be printed
+    if title != None and title.strip() != '':
+        # Print title
+        print(TITLE_MARKER_LEFT+" "+title+" "+TITLE_MARKER_RIGHT)
 
     # Print Menu
     index = 0
@@ -135,36 +137,6 @@ def managedInputForced(query, blacklist = [None, ""]):
     while(answer in blacklist):
         # Ask user for input
         answer = input(query+": ").strip()
-
-    # Return the answer
-    return answer
-
-# Asks for user input while waiting for a response found within the whitelist
-# query -> Question to ask the user for input on. Has ": " appended to it
-# whitelist -> Inputs that would qualify as valid inputs
-# normalize -> If set to true, the function will force all strings to be lowercase
-#   and extra whitespace will be trimmed
-def managedInputForcedWhitelist(query, whitelist, normalize = False):
-    # Check if normalizing
-    if normalize:
-        # Loop through the whitelist
-        for i in range(len(whitelist)):
-            # Get the item
-            item = whitelist[i]
-
-            # Check if the item is a string
-            if isinstance(item, str):
-                whitelist[i] = item.strip().lower()
-
-    # Enter the input loop
-    answer = None
-    while(answer not in whitelist):
-        # Ask user for input
-        answer = input(query+": ").strip()
-
-        # Check if normalizing
-        if normalize:
-            answer = answer.lower()
 
     # Return the answer
     return answer
@@ -333,10 +305,16 @@ def writeFullFile(fileName, text):
         # Write the text out
         wFile.write(text)
 
-# Prints and retains a checkbox based menu system based on provided information leaving the calling program to decide function.
+# DEPRECIATED: Prints and retains a checkbox based menu system based on provided information leaving the calling program to decide function.
+# NOTE: It is recommend to use the pagedMultiSelect functions instead of this.
 # title -> The title of the menu
 # choices -> Dictionary of Choice Titles as keys and if the option is selected as Boolen for the value to be displayed by the menu
-def presentCheckboxMenu(title, choices):
+def presentCheckboxMenu(title, choices, silenceDepreciation = False):
+    # Check if depreciation silenced
+    if not silenceDepreciation:
+        # Print the depreciation message
+        print('presentCheckboxMenu(...) is depreciated. Check it\'s documentation for alternatives.')
+
     # Print title
     print(TITLE_MARKER_LEFT+" "+title+" "+TITLE_MARKER_RIGHT)
 
@@ -384,12 +362,18 @@ def presentCheckboxMenu(title, choices):
     # Ask user for choice and return
     return answer, choices
 
-# Prints a check box menu and handles input between an accompanied execution function all within a handled loop.
+# DEPRECITATED: Prints a check box menu and handles input between an accompanied execution function all within a handled loop.
+# NOTE: It is recommend to use the pagedMultiSelect functions instead of this.
 # title -> The title of the menu
 # choices -> Dictionary of Choice Titles as keys and if the option is selected as Boolen for the value to be displayed by the menu
 # lastOption -> Option to add to the last of the choices. Often 'Back' or 'Quit'
 # func -> The function to call within the script that calls this function that uses the data gathered from this function
-def checkboxMenu(title, choices, lastOption, func):
+def checkboxMenu(title, choices, lastOption, func, silenceDepreciation = False):
+    # Check if depreciation silenced
+    if not silenceDepreciation:
+        # Print the depreciation message
+        print('checkboxMenu(...) is depreciated. Check it\'s documentation for alternatives.')
+
     # Prep answer choice
     answer = None
 
@@ -523,3 +507,166 @@ def endClocker(key, message = 'Completed in ', seperator = ', ', retain = False)
     else:
         # Report the problem
         print('GeneralUtlities: No clocker exists for the key, \''+str(key)+'\'')
+
+# Allows the user to select multiple options from a provided list of choices that are displayed in a pageinated
+#   fashion for easy reading. Returns a list of the selected answers, or None if a cancelOption was provided and
+#   the user chooses it.
+# title -> The title of the menu. Can also be supplied 'None' to have no title printed
+# choices -> A list of the possible choices. Ensure your choices do not have the same String as any of your
+#   values for the various options!
+# confirmOption -> The text shown for the option that confirms the current selection
+# perPage -> Indicates how many items shown per page
+# minSelect -> The minimum number of items that need to be selected for a valid return
+# maxSelect -> The maximum number of items that can be selected for a valid return. Supply -1 if there should be no limit
+# cancelOption -> The text shown for the option that cancels input. If None is provided, no cancel option is shown
+# nextOption -> The text shown for the option that allows movement to the next page
+# prevOption -> The text shown for the option that allows movement to the previous page
+# allowSearch -> If the user is allowed to used the search action. Search is generally not needed for very short choice lists,
+#   but is extremely helpful for long ones
+def presentPagedMultiSelect(title, choices, confirmOption, perPage = 8, minSelect = 1, maxSelect = -1, cancelOption = None, nextOption = 'Next Page', prevOption = 'Prev Page', allowSearch = True):
+    # Bound the select boundries
+    if minSelect <= 0:
+        minSelect = 1
+
+    if maxSelect != -1 and maxSelect < minSelect:
+        maxSelect = minSelect
+
+    # Establish the search option
+    searchOption = ':Search'
+
+    # Prepare the selected answers list
+    answers = []
+
+    # Split the choices into paged clumps
+    choicesPaged = [choices[i*perPage:(i+1)*perPage] for i in range((len(choices)+perPage-1)//perPage)]
+
+    # Enter the input loop
+    finished = False
+    curPage = 0
+    while not finished:
+        # Check if what type of status needs to be printed
+        selectStatus = ''
+        if len(answers) >= minSelect:
+            # Check if a max is set
+            if maxSelect != -1:
+                # Show the current out of max
+                selectStatus = ('Selected '+str(len(answers))+'/'+str(maxSelect))
+            else:
+                # Show the current selected
+                selectStatus = ('Selected '+str(len(answers)))
+        elif minSelect != 0:
+            # Show the at least select amount text
+            selectStatus = ('Select at least '+str(minSelect))
+
+        # Check if title should be printed
+        if title != None and title.strip() != '':
+            # Print the title
+            print(TITLE_MARKER_LEFT+" "+title+" "+TITLE_MARKER_RIGHT)
+
+        # Print the page and selection information
+        print('Page '+str(curPage+1)+' of '+str(len(choicesPaged)))
+        print(selectStatus+': '+(', '.join(answers) if len(answers) > 0 else 'None'))
+
+        # Copy the current page choices
+        curChoices = choicesPaged[curPage].copy()
+
+        # Check if not on the last page
+        if curPage < (len(choicesPaged)-1):
+            # Add the next page option
+            curChoices.append(':'+str(nextOption))
+
+        # Check if not on the first page
+        if curPage > 0:
+            # Add the previous page option
+            curChoices.append(':'+str(prevOption))
+
+        # Check if search is enabled
+        if allowSearch:
+            # Add the search option
+            curChoices.append(searchOption)
+
+        # Add the confirm option
+        curChoices.append(':'+str(confirmOption))
+
+        # Check if a cancel option was provided
+        if cancelOption != None and cancelOption.strip() != '':
+            # Add the cancel option
+            curChoices.append(':'+str(cancelOption))
+
+        # Present a text menu with the current options
+        choice = int(presentTextMenu(None, curChoices))
+
+        # Get the actual choice text from the option
+        choice = curChoices[choice]
+
+        # Check if the user is allowed to search and they've chosen to
+        if allowSearch and choice == searchOption:
+            # Allow the user to search and change the current choice
+            choice = presentSearchInput(choices)
+
+        # Decide what to do with the choice
+        if choice == (':'+str(confirmOption)):
+            # Check if the minimum amount of items has been selected
+            if len(answers) >= minSelect:
+                # Mark as finished
+                finished = True
+                break
+            else:
+                # Tell the user they need to select more
+                print('\n'+str(minSelect)+' item'+('s' if minSelect != 1 else '')+' must be selected.\n')
+        elif choice == (':'+str(cancelOption)):
+            # Set the answers to None
+            answers = None
+
+            # Mark as finished
+            finished = True
+            break
+        elif choice == (':'+str(nextOption)):
+            # Iterate to the next page
+            curPage += 1
+        elif choice == (':'+str(prevOption)):
+            # Iterate to the previous page
+            curPage -= 1
+        else:
+            # Check if choice is in answers
+            if choice in answers:
+                # Remove the choice from answers
+                answers.remove(choice)
+            else:
+                # Check if above the max items
+                if maxSelect != -1 and len(answers) >= maxSelect:
+                    # Report the issue
+                    print('\nOnly '+str(maxSelect)+' items can be selected!\n')
+                else:
+                    # Add the selected to the answers list
+                    answers.append(choice)
+
+    # Return the selected answers
+    return answers
+
+# Presents the user with a search bar. Returns the answer as it is found in options
+# options -> The options to search within
+def presentSearchInput(options):
+    # Enter the action loop
+    answer = None
+    while True:
+        # Ask the user for a query
+        query = managedInputForced('Search '+str(len(options))+' items')
+
+        # Get the items that are similar in string form
+        results = [option for option in options if query.lower() in str(option).lower()]
+
+        # Add the search again option
+        results.append(':Search Again')
+
+        # Ask the user if any of the results are what they want
+        answerIndex = int(presentTextMenu(None, results))
+
+        # Check if a selected answer
+        if answerIndex != (len(results)-1):
+            # Set the answer and exit
+            answer = results[answerIndex]
+            break
+
+    # Return the selected answer
+    return answer
